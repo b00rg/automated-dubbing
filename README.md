@@ -39,6 +39,7 @@ Reconstruction       →  audio time-stretching + video muxing
          ↓
 Download (Dubbed Video)
 ```
+<img width="694" height="441" alt="Screenshot 2026-04-09 at 16 27 18" src="https://github.com/user-attachments/assets/19a6902e-a7c1-49c9-91f1-b2e65f4f768b" />
 
 Using Kafka queues and independent microservices allows each stage to scale up or down independently to meet demand.
 
