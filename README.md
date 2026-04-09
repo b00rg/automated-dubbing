@@ -1,48 +1,53 @@
 # AutoDub
 
-An AI-powered video translation and dubbing platform. Upload a video in any language and receive a dubbed version with speaker-aware voice synthesis — voices are cloned per speaker and time-stretched to match the original timing.
+An automated video dubbing platform built in association with Microsoft. Upload a video in any language and receive a dubbed version. Voices are cloned per speaker, translated into the target language, and time-stretched to fit the original timing.
+
+## How It Works
+
+The pipeline uses seven machine learning models:
+
+1. **Language detection**: Azure AI Foundry identifies the source language automatically
+2. **Transcription** (concurrent): Azure AI Foundry transcribes speech with timestamps
+3. **Diarization** (concurrent): a Hugging Face model (run locally on CPU) assigns timestamps to each speaker, giving each person a unique voice
+4. **Translation**: Azure AI Foundry translates the transcribed segments into the target language
+5. **Voice cloning**: ElevenLabs selects the best audio samples per speaker and creates a clone of their voice
+6. **Text-to-speech**: ElevenLabs generates translated audio in each speaker's cloned voice
+7. **Reconstruction**: audio segments are time-stretched/compressed to fit the original timestamps, layered over the original background audio, and muxed back into the video
 
 ## Architecture
 
-The system is a monorepo with two services communicating via Kafka and Azure Blob Storage:
+The system is a monorepo with two services communicating via Apache Kafka and Azure Blob Storage:
 
 ```
 User Upload (Next.js Webapp)
          ↓
-    Ingest Event (Kafka)
+    Ingest Queue (Kafka)
          ↓
-Diarization Service → Transcription + Speaker Detection
+Diarization Service  →  speaker detection + transcription with timestamps
          ↓
-Translation Service → Language Translation
+Translation Service  →  text translation per segment
          ↓
-TTS Service        → Voice Synthesis (speaker-aware)
+TTS Service          →  voice cloning + speech synthesis
          ↓
-Reconstruction     → Audio/Video Muxing
+Reconstruction       →  audio time-stretching + video muxing
          ↓
 Download (Dubbed Video)
 ```
 
+Using Kafka queues and independent microservices allows each stage to scale up or down independently to meet demand.
+
 | Directory | Description |
 |---|---|
 | [`webapp/`](webapp/) | Next.js frontend and tRPC API for video uploads and progress tracking |
-| [`ai-processing/`](ai-processing/) | Python microservices for diarization, translation, TTS, and reconstruction |
-
-## Features
-
-- **Speaker diarization** — identifies and separates speakers using pyannote
-- **Automatic transcription** — OpenAI Whisper with source language detection
-- **Multi-language translation** — 50+ languages via Azure Translator
-- **Voice cloning** — ElevenLabs maintains voice identity per speaker across the dub
-- **Audio reconstruction** — Rubberband time-stretches audio to match original timing
-- **Progress tracking** — real-time pipeline status per video in the webapp
+| [`ai-processing/`](ai-processing/) | Python microservices for the dubbing pipeline |
 
 ## Tech Stack
 
 **Webapp**: Next.js 15, TypeScript, tRPC, Drizzle ORM, PostgreSQL, Better Auth, Shadcn/UI, Tailwind CSS, KafkaJS
 
-**AI Processing**: Python 3.11, PyTorch, OpenAI Whisper, pyannote, ElevenLabs, Azure Cognitive Services, FFmpeg, Rubberband
+**AI Processing**: Python 3.11, Azure AI Foundry, Hugging Face (pyannote diarization), ElevenLabs, FFmpeg, Rubberband
 
-**Infrastructure**: Kafka, Azure Blob Storage, PostgreSQL, Docker
+**Infrastructure**: Apache Kafka, Azure Blob Storage, PostgreSQL, Docker, Dokploy
 
 ## Getting Started
 
@@ -52,7 +57,7 @@ Download (Dubbed Video)
 - Python 3.11+
 - Docker
 - Kafka cluster
-- Azure Storage account
+- Azure Storage account and Azure AI Foundry credentials
 - ElevenLabs API key
 
 ### Webapp
@@ -94,4 +99,6 @@ Each microservice runs as an independent Kafka consumer. See [`ai-processing/REA
 
 ## Deployment
 
-Each AI processing microservice has its own Dockerfile (`Dockerfile.diarization`, `Dockerfile.translation`, `Dockerfile.tts`, `Dockerfile.reconstruction`) built from a shared base image. The webapp deploys as a standard Next.js application.
+The platform is hosted on a self-hosted Ubuntu machine using [Dokploy](https://dokploy.com). Each service is connected directly to its repository — Dokploy watches for new commits and automatically rebuilds and redeploys on push.
+
+Each AI processing microservice has its own Dockerfile (`Dockerfile.diarization`, `Dockerfile.translation`, `Dockerfile.tts`, `Dockerfile.reconstruction`) built from a shared base image, so individual pipeline stages can be updated and redeployed independently.
