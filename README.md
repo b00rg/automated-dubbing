@@ -1,5 +1,9 @@
 # AutoDub
 
+<img width="1343" height="765" alt="Screenshot 2026-04-09 at 15 25 36" src="https://github.com/user-attachments/assets/001b2ee5-4d19-49be-a7c2-834163651926" />
+
+<img width="1343" height="765" alt="Screenshot 2026-04-09 at 15 25 27" src="https://github.com/user-attachments/assets/6c4f83de-e683-4c06-9993-fdad39f194ea" />
+
 An automated video dubbing platform built in association with Microsoft for Trinity College's SWENG module. Upload a video in any language and receive a dubbed version. Voices are cloned per speaker, translated into the target language, and time-stretched to fit the original timing.
 
 ## How It Works
