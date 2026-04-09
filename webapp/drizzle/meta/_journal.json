@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1770808179239,
+      "tag": "0000_striped_iron_patriot",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772461679020,
+      "tag": "0001_sparkling_franklin_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773496254211,
+      "tag": "0002_acoustic_bloodaxe",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773771346298,
+      "tag": "0003_tricky_wendell_vaughn",
+      "breakpoints": true
+    }
+  ]
+}

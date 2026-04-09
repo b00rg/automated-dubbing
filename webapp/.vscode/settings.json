@@ -1,0 +1,9 @@
+{
+    "chat.mcp.serverSampling": {
+        "webapp/.vscode/mcp.json: shadcn": {
+            "allowedModels": [
+                "copilot/auto"
+            ]
+        }
+    }
+}

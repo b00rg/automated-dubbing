@@ -1,0 +1,87 @@
+image: node:20
+
+stages:
+  - test
+  - build
+  - release
+
+variables:
+  NEXT_TELEMETRY_DISABLED: "1"
+  SKIP_ENV_VALIDATION: "1"
+  PNPM_STORE_PATH: "$CI_PROJECT_DIR/.pnpm-store"
+  BETTER_AUTH_SECRET: "$CI_COMMIT_SHA"
+  BETTER_AUTH_URL: "http://localhost:3000"
+  GOOGLE_CLIENT_ID: "ci"
+  GOOGLE_CLIENT_SECRET: "ci"
+
+cache:
+  key:
+    files:
+      - pnpm-lock.yaml
+  paths:
+    - .pnpm-store/
+
+default:
+  before_script:
+    - |
+      set -euo pipefail
+
+      if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+        NODE_VERSION="20.11.1"
+        echo "node/npm not found. Installing Node.js v${NODE_VERSION} locally into $CI_PROJECT_DIR/.node"
+        curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz" -o node.tar.gz
+        mkdir -p .node
+        tar -xzf node.tar.gz -C .node --strip-components=1
+        export PATH="$CI_PROJECT_DIR/.node/bin:$PATH"
+      fi
+
+      node --version
+      npm --version
+
+      # Avoid Corepack key-signature issues on some runners by installing pnpm
+            # directly into a project-local npm prefix.
+                  NPM_GLOBAL_PREFIX="$CI_PROJECT_DIR/.npm-global"
+                        mkdir -p "$NPM_GLOBAL_PREFIX"
+                              npm config set prefix "$NPM_GLOBAL_PREFIX"
+                                    export PATH="$NPM_GLOBAL_PREFIX/bin:$PATH"
+                                          npm i -g pnpm@10.28.1
+                                          
+      pnpm --version
+    - mkdir -p "$PNPM_STORE_PATH"
+    - pnpm config set store-dir "$PNPM_STORE_PATH"
+    - pnpm install --frozen-lockfile
+
+test:
+  stage: test
+  script:
+    - pnpm check
+    - pnpm test --run
+
+build:
+  stage: build
+  needs:
+    - test
+  script:
+    - pnpm build
+
+release:
+  stage: release
+  image: curlimages/curl:8.12.1
+  needs:
+    - build
+  before_script: []
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
+  script:
+    - |
+      VERSION="$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' package.json | head -n 1)"
+      TAG_NAME="v${VERSION}-${CI_PIPELINE_IID}"
+      RELEASE_NAME="Release ${TAG_NAME}"
+      RELEASE_DESCRIPTION="Automated release for ${CI_COMMIT_SHA} from ${CI_COMMIT_REF_NAME}."
+
+      curl --fail --silent --show-error \
+        --request POST \
+        --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        --header "Content-Type: application/json" \
+        --data "$(printf '{\"name\":\"%s\",\"tag_name\":\"%s\",\"ref\":\"%s\",\"description\":\"%s\"}' \"$RELEASE_NAME\" \"$TAG_NAME\" \"$CI_COMMIT_SHA\" \"$RELEASE_DESCRIPTION\")" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases"
