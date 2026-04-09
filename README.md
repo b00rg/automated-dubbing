@@ -1,6 +1,6 @@
 # AutoDub
 
-An automated video dubbing platform built in association with Microsoft. Upload a video in any language and receive a dubbed version. Voices are cloned per speaker, translated into the target language, and time-stretched to fit the original timing.
+An automated video dubbing platform built in association with Microsoft for Trinity College's SWENG module. Upload a video in any language and receive a dubbed version. Voices are cloned per speaker, translated into the target language, and time-stretched to fit the original timing.
 
 ## How It Works
 
@@ -98,7 +98,4 @@ Each microservice runs as an independent Kafka consumer. See [`ai-processing/REA
 | `reconstruct_video` | TTS | Reconstruction |
 
 ## Deployment
-
-The platform is hosted on a self-hosted Ubuntu machine using [Dokploy](https://dokploy.com). Each service is connected directly to its repository — Dokploy watches for new commits and automatically rebuilds and redeploys on push.
-
 Each AI processing microservice has its own Dockerfile (`Dockerfile.diarization`, `Dockerfile.translation`, `Dockerfile.tts`, `Dockerfile.reconstruction`) built from a shared base image, so individual pipeline stages can be updated and redeployed independently.
