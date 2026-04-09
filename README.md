@@ -6,6 +6,8 @@
 
 An automated video dubbing platform built in association with Microsoft for Trinity College's SWENG module. Upload a video in any language and receive a dubbed version. Voices are cloned per speaker, translated into the target language, and time-stretched to fit the original timing.
 
+See the `sample-outputs` folder for example dubs.
+
 ## How It Works
 
 The pipeline uses seven machine learning models:
